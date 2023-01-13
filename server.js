@@ -20,7 +20,7 @@ app.get("/", (req, res, next) => {
 });
 
 // Insert here other API endpoints
-app.get("/api/users", (req, res, next) => {
+app.get("/api/auth/register", (req, res, next) => {
     var sql = "select * from users"
     var params = []
     db.all(sql, params, (err, rows) => {
@@ -29,13 +29,14 @@ app.get("/api/users", (req, res, next) => {
           return;
         }
         res.json({
+            "status": "200",
             "message":"success",
             "data":rows
         })
       });
 });
 
-app.get("/api/users/:id", (req, res, next) => {
+app.get("/api/auth/authenticate", (req, res, next) => {
     var sql = "select * from users where id = ?"
     var params = [req.params.id]
     db.get(sql, params, (err, row) => {
@@ -44,13 +45,14 @@ app.get("/api/users/:id", (req, res, next) => {
           return;
         }
         res.json({
+            "status": "200",
             "message":"success",
             "data":row
         })
       });
 });
 
-app.post("/api/user/", (req, res, next) => {
+app.post("/api/auth/register", (req, res, next) => {
     var errors=[]
     if (!req.body.password){
         errors.push("No password specified");
