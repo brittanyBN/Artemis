@@ -7,12 +7,12 @@ router.use(express.json())
 router.use(express.urlencoded({ extended: true }))
 
 // Root endpoint
-app.get("/", (req, res, next) => {
+router.get("/", (req, res, next) => {
     res.json({"message":"Ok"});
 });
 
 // GET all users
-app.get("/users", (req, res, next) => {
+router.get("/users", (req, res, next) => {
     var sql = "select * from users"
     var params = []
     db.all(sql, params, (err, rows) => {
@@ -29,7 +29,7 @@ app.get("/users", (req, res, next) => {
 });
 
 // GET one user by ID
-app.get("/user/:id", (req, res, next) => {
+router.get("/user/:id", (req, res, next) => {
     var sql = "select * from users where id = ?"
     var params = [req.params.id]
     db.get(sql, params, (err, row) => {
@@ -46,8 +46,8 @@ app.get("/user/:id", (req, res, next) => {
 });
 
 // Register new user
-app.post("/register", (req, res, next) => {
-    var errors=[]
+router.post("/register", (req, res, next) => {
+    let errors=[]
     if (!req.body.password){
         errors.push("No password specified");
     }
@@ -61,14 +61,14 @@ app.post("/register", (req, res, next) => {
         res.status(400).json({"error":errors.join(",")});
         return;
     }
-    var data = {
+    let data = {
         name: req.body.name,
         email: req.body.email,
         phone: req.body.phone,
         password : md5(req.body.password)
     }
-    var sql ='INSERT INTO users (name, email, phone, password) VALUES (?,?,?,?)'
-    var params =[data.name, data.email, data.phone, data.password]
+    let sql ='INSERT INTO users (name, email, phone, password) VALUES (?,?,?,?)'
+    let params =[data.name, data.email, data.phone, data.password]
     db.run(sql, params, function (err, result) {
         if (err){
             res.status(400).json({"error": err.message});
@@ -83,10 +83,45 @@ app.post("/register", (req, res, next) => {
 });
 
 // Authenticate user
+router.post("/authenticate", (req, res) => {
+    let errors=[]
+    if (!req.body.password){
+        errors.push("No password specified");
+    }
+    if (!req.body.email){
+        errors.push("No email specified");
+    }
+    if (!req.body.phone){
+        errors.push("No phone number specified");
+    }
+    if (errors.length){
+        res.status(400).json({"error":errors.join(",")});
+        return;
+    }
+
+    let email = req.body.email;
+    let password = md5(req.body.password);
+    let sql = `SELECT * FROM users WHERE email = ? AND password = ?`;
+    let params = [email, password];
+    db.get(sql, params, (err, row) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        if (!row) {
+            res.status(401).json({ "error": "Invalid email or password" });
+            return;
+        }
+        res.json({ 
+            "message": "success", 
+            "user": row 
+        });
+    });
+});
 
 // Update user, find by ID
-app.patch("/user/:id", (req, res, next) => {
-    var data = {
+router.patch("/user/:id", (req, res, next) => {
+    let data = {
         name: req.body.name,
         email: req.body.email,
         phone: req.body.phone,
@@ -114,7 +149,7 @@ app.patch("/user/:id", (req, res, next) => {
 })
 
 // Delete user, find by ID
-app.delete("/delete/:id", (req, res, next) => {
+router.delete("/delete/:id", (req, res, next) => {
     db.run(
         'DELETE FROM user WHERE id = ?',
         req.params.id,
